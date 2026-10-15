@@ -23,7 +23,7 @@ export async function GET(req){
    // Never retry a link-bearing invitation unless an encrypted template/link has been retained.
    if(item.kind==='invitation'){
     await sql(`UPDATE email_deliveries SET status='failed',last_error='Invitation retry requires reissued secure link',
-      attempts=$2,next_attempt_at=now()+interval '100 years',updated_at=now() WHERE id=$1 AND attempts=$2`,[item.id,MAX_ATTEMPTS]);failed++;continue;
+      attempts=$2,next_attempt_at=now()+interval '100 years',updated_at=now() WHERE id=$1 AND attempts=$2 AND status NOT IN ('delivered','bounced','complained')`,[item.id,MAX_ATTEMPTS]);failed++;continue;
    }
    const context=(await sql(`SELECT v.candidate_name,v.scheduled_at,i.role FROM invitations v
      JOIN interviews i ON i.id=v.interview_id WHERE v.id=$1 AND v.status='invited'`,[item.invitation_id])).rows[0];
@@ -41,7 +41,7 @@ export async function GET(req){
       last_error=CASE WHEN $1='sent' THEN NULL ELSE 'Provider send failed' END,
       next_attempt_at=CASE WHEN $1='sent' THEN now()+interval '100 years'
       ELSE now()+($3::integer * interval '1 minute') END,updated_at=now()
-      WHERE id=$4 AND attempts=$5`,[success?'sent':'failed',result.providerId,delayMinutes(item.attempts),item.id,item.attempts]);
+      WHERE id=$4 AND attempts=$5 AND status NOT IN ('delivered','bounced','complained')`,[success?'sent':'failed',result.providerId,delayMinutes(item.attempts),item.id,item.attempts]);
    if(success)sent++;else failed++;
   }
   return Response.json({status:'ok',attempted,sent,failed});
