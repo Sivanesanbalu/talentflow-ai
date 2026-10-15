@@ -1,21 +1,41 @@
-# TalentFlow AI — consolidated phase 13 source
+# TalentFlow AI — AI Interview SaaS
 
-Next.js + PostgreSQL SaaS baseline assembled from prior modules. Includes recruiter auth, interview builder, candidate invitations, browser voice studio, optional OpenRouter follow-ups, candidate answer submission, HR human review/rankings and next round.
+Next.js 15, React 19, and PostgreSQL application with recruiter authentication, job interview configuration, candidate invitation links, browser-based voice interview studio, optional AI follow-up questions, interview submissions, human HR review, rankings, next-round workflow, and email notification/recovery source.
 
-## Local start
-`npm install` → `cp .env.example .env.local` → configure a *development* PostgreSQL database with the schema below → `npm run dev`.
+## GitHub source status
 
-Run `npm test` and `npm run build` before deployment. Protect preview, use separate test tenant, and run authenticated end-to-end tests before production promotion. Do not apply migrations or send invitations to genuine candidates while testing.
+This is the consolidated **Phase 23** source on the public `main` branch. Source upload and CI workflow updates have been performed through the connected GitHub integration. **A successful production build, database-backed E2E run, and deployment of this revision have not yet been confirmed.** Do not consider this code production validated.
 
-`migration.sql` contains additions for an *existing* TalentFlow database. Not a full database bootstrap. Automated emails, real-time streaming voice AI and code execution are **not implemented**. Browser speech depends on browser support. Human reviewer decisions are never replaced with AI grades.
+## Local verification
 
-No secrets included. This source has not been deployed to Vercel or pushed to GitHub.
+```sh
+npm install
+npm test
+npm run check:source
+npm run build
+```
 
-## Phase 14 static checks
-Run `npm run check:source` to verify required modules and invitation URLs before publishing.
+Use Node.js 24, matching GitHub CI and the existing Vercel project. The GitHub workflow performs source, unit, and production compilation checks. CI passing must be confirmed separately.
 
-## Status
-`npm test` passes. `npm install` timed out in the available environment, so production compilation and live E2E tests remain unverified. Do not promote without those checks.
+## Environment
 
-## GitHub release
-This source has been transferred to GitHub. Full build, provider integration and end-to-end testing are not yet verified.
+Copy `.env.example` to a local, ignored `.env.local`. Configure a development PostgreSQL database and a strong `SESSION_SECRET`. Optional integrations require `OPENROUTER_API_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, and `CRON_SECRET` as applicable. Never commit actual values to this public repository.
+
+`migration.sql` is **additive for the existing TalentFlow schema**, not a complete database bootstrap. Review and apply migrations in a controlled environment before using API routes depending on new columns/tables.
+
+## Capabilities and limits
+
+- Browser voice depends on speech-recognition and text-to-speech browser support. This is not a verified real-time telephony or full-duplex voice provider integration.
+- AI follow-up and external email delivery require configured providers; real provider workflows are not yet E2E verified.
+- Phase 23 invitation reissue invalidates the old token before provider delivery. A delivery failure needs recruiter recovery; webhook races and an immutable email-attempt ledger remain unresolved.
+- Multi-tenant isolation, rate limiting, abuse handling, DB races, live integration, accessibility and load must be assessed before production promotion.
+
+## Release gates
+
+1. Confirm GitHub Actions build success for the exact commit being released.
+2. Validate database migration compatibility in a staging/test tenant.
+3. Deploy to an authenticated Vercel preview (do not disable protection).
+4. Test recruiter login, interview creation, invitation, candidate session/submission, human review, next-round and provider failures without real applicant data.
+5. Promote to production only after those checks; track deployed Git SHA.
+
+See `PHASE23_STATUS.md` and `RELEASE_CHECKLIST.md` for current caveats.
