@@ -21,8 +21,8 @@ if (!process.env.DATABASE_URL) {
     const missing = Object.entries(REQUIRED).flatMap(([table, columns]) =>
       columns.filter(col => !present.has(table + '.' + col)).map(col => table + '.' + col));
     const checks = await client.query(
-      "SELECT conname, pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid = 'public.email_deliveries'::regclass"
-    ).catch(err => ({ rows: [], error: err }));
+      "SELECT conname, pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid = to_regclass('public.email_deliveries')"
+    );
     const constraints = new Map(checks.rows.map(r => [r.conname, r.definition]));
     const requiredConstraints = [
       'email_deliveries_invitation_id_fkey',
@@ -30,6 +30,10 @@ if (!process.env.DATABASE_URL) {
       'email_deliveries_status_check'
     ];
     const missingConstraints = requiredConstraints.filter(name => !constraints.has(name));
+    const statusRule = constraints.get('email_deliveries_status_check') || '';
+    for (const status of ['pending','sent','failed','not_configured','delivered','bounced','complained']) {
+      if (!statusRule.includes(status)) missingConstraints.push('email_deliveries_status_check: ' + status);
+    }
     const indexResult = await client.query(
       "SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname = ANY($1::text[])",
       [['ix_email_deliveries_retries','ix_email_deliveries_provider_message_id']]
