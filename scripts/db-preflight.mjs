@@ -20,12 +20,29 @@ if (!process.env.DATABASE_URL) {
     const present = new Set(result.rows.map(({table_name,column_name}) => table_name + '.' + column_name));
     const missing = Object.entries(REQUIRED).flatMap(([table, columns]) =>
       columns.filter(col => !present.has(table + '.' + col)).map(col => table + '.' + col));
+    const checks = await client.query(
+      "SELECT conname, pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid = 'public.email_deliveries'::regclass"
+    ).catch(err => ({ rows: [], error: err }));
+    const constraints = new Map(checks.rows.map(r => [r.conname, r.definition]));
+    const requiredConstraints = [
+      'email_deliveries_invitation_id_fkey',
+      'email_deliveries_invitation_id_kind_key',
+      'email_deliveries_status_check'
+    ];
+    const missingConstraints = requiredConstraints.filter(name => !constraints.has(name));
+    const indexResult = await client.query(
+      "SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname = ANY($1::text[])",
+      [['ix_email_deliveries_retries','ix_email_deliveries_provider_message_id']]
+    );
+    const indexes = new Set(indexResult.rows.map(r => r.indexname));
+    const missingIndexes = ['ix_email_deliveries_retries','ix_email_deliveries_provider_message_id'].filter(x => !indexes.has(x));
+    missing.push(...missingConstraints.map(x => 'constraint.' + x), ...missingIndexes.map(x => 'index.' + x));
     if (missing.length) {
       console.error('BLOCKED: missing database schema elements:\n' + missing.map(x => ' - ' + x).join('\n'));
       console.error('Review migration.sql before deploying; this preflight performs no writes.');
       process.exitCode = 1;
     } else {
-      console.log('PASS: required Phase 23 database columns detected (read-only check).');
+      console.log('PASS: required Phase 23 database columns, constraints and indexes detected (read-only check).');
     }
   } catch (err) {
     console.error('Database preflight failed:', err.code || err.name || 'unknown_error');
