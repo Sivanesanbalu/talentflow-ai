@@ -27,6 +27,9 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Unit and source validation
         run: npm test && npm run check:source
+      - name: Parse backend and test modules
+        run: |
+          find app/api lib scripts tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
       - name: Production compilation
         run: npm run build
         env:
