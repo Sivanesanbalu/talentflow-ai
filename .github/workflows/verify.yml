@@ -20,7 +20,43 @@ jobs:
           node-version: '24'
       - name: Ensure secrets are not committed
         run: |
-          if git ls-files | grep -E '(^|/)(\.env($|\.(local|production|development)$)|.*\.(pem|key)$)'; then
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example
+            echo "Sensitive credential file detected" >&2
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Unit and source validation
+        run: npm test && npm run check:source
+      - name: Parse backend and test modules
+        run: |
+          find app/api lib scripts tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Production compilation
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+          SESSION_SECRET: build-only-placeholder
+; then
+            echo "Tracked environment file detected" >&2
+            exit 1
+          fi
+          if git ls-files | grep -E '\.(pem|key)
+            echo "Sensitive credential file detected" >&2
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Unit and source validation
+        run: npm test && npm run check:source
+      - name: Parse backend and test modules
+        run: |
+          find app/api lib scripts tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Production compilation
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+          SESSION_SECRET: build-only-placeholder
+; then
             echo "Sensitive credential file detected" >&2
             exit 1
           fi
