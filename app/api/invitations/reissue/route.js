@@ -19,11 +19,11 @@ export async function POST(req){
   const inv=r.rows[0];
   // Record a distinct send attempt without duplicating the unique delivery row.
   await sql(`UPDATE email_deliveries SET status='pending',attempts=attempts+1,
-   last_error=NULL,updated_at=now() WHERE invitation_id=$1 AND kind='invitation'`,[inv.id]);
+   last_error=NULL,provider_message_id=NULL,updated_at=now() WHERE invitation_id=$1 AND kind='invitation'`,[inv.id]);
   const url=new URL('/interview-studio?invite='+t,req.url).toString();
   let result;try{result=await deliverEmail({to:inv.email,...invitationEmail({candidate:inv.candidate_name,role:inv.role,scheduledAt:inv.scheduled_at,url}),idempotencyKey:'talentflow-reissue-'+inv.id+'-'+hash(t).slice(0,16)})}catch{result={status:'failed',providerId:null}};
   await sql(`UPDATE email_deliveries SET status=$1,provider_message_id=$2,updated_at=now(),
-   sent_at=CASE WHEN $1='sent' THEN now() ELSE NULL END WHERE invitation_id=$3 AND kind='invitation'`,[result.status,result.providerId,inv.id]);
+   sent_at=CASE WHEN $1='sent' THEN now() ELSE NULL END WHERE invitation_id=$3 AND kind='invitation' AND status='pending'`,[result.status,result.providerId,inv.id]);
   // Never include a bearer invitation URL in the API response when emailing is enabled.
   return Response.json({delivery:result.status,reissued:true});
  }catch(e){return fail(e)}
