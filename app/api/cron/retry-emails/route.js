@@ -29,7 +29,7 @@ export async function GET(req){
      JOIN interviews i ON i.id=v.interview_id WHERE v.id=$1 AND v.status='invited'`,[item.invitation_id])).rows[0];
    if(!context||!context.scheduled_at){
     await sql(`UPDATE email_deliveries SET status='failed',last_error='No valid scheduled interview',attempts=$2,
-      next_attempt_at=now()+interval '100 years',updated_at=now() WHERE id=$1 AND attempts=$2`,[item.id,MAX_ATTEMPTS]);failed++;continue;
+      next_attempt_at=now()+interval '100 years',updated_at=now() WHERE id=$1 AND attempts=$2 AND status NOT IN ('delivered','bounced','complained')`,[item.id,MAX_ATTEMPTS]);failed++;continue;
    }
    const msg={to:item.recipient,subject:`Interview reminder: ${context.role}`,
     text:`Hello ${context.candidate_name||'Candidate'}, your ${context.role} interview is scheduled for ${new Date(context.scheduled_at).toISOString()} UTC. Use the original private invitation link or contact your recruiter.`,
