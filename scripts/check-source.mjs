@@ -1,0 +1,6 @@
+import {existsSync,readFileSync} from 'node:fs';
+const must=['app/page.jsx','app/interview-studio/page.jsx','app/recruiter/reviews/page.jsx','app/api/auth/route.js','app/api/interviews/route.js','app/api/invitations/route.js','app/api/candidate/route.js','app/api/agent/follow-up/route.js','app/api/review/route.js','app/api/rankings/route.js','app/api/next-round/route.js','app/api/health/route.js','lib/db.js','lib/auth.js','lib/candidate-validation.mjs','lib/review.js'];
+for(const f of must){if(!existsSync(f))throw Error('Missing '+f);console.log('OK',f)}
+for(const f of ['app/api/invitations/route.js','app/api/next-round/route.js']){const s=readFileSync(f,'utf8');if(!s.includes('/interview-studio?invite='))throw Error('Invitation URL does not open voice studio: '+f)}
+for(const f of ['app/api/candidate/route.js','app/api/agent/follow-up/route.js']){const s=readFileSync(f,'utf8');if(!s.includes('token'))throw Error('Token validation missing: '+f)}
+console.log('Source checks passed');

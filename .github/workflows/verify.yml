@@ -1,0 +1,24 @@
+name: Verify TalentFlow AI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies (lockfile required before production promotion)
+        run: npm install --no-audit --no-fund
+      - name: Unit and source validation
+        run: npm test && npm run check:source
+      - name: Production compilation
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+          SESSION_SECRET: build-only-placeholder

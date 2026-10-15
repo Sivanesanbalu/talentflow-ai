@@ -1,0 +1,1 @@
+import './style.css';export const metadata={title:'TalentFlow AI | Interview Workspace',description:'Organize and review structured interviews'};export default function RootLayout({children}){return <html lang="en"><body>{children}</body></html>}

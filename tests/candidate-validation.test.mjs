@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {validateAnswers,validateInvitationToken,validateInterviewWindow} from '../lib/candidate-validation.mjs';
+const valid = 'a'.repeat(64);
+assert.equal(validateInvitationToken(valid),valid);
+for(const t of ['bad', 'A'.repeat(64), undefined]) assert.throws(()=>validateInvitationToken(t));
+assert.deepEqual(validateAnswers(['yes',''],2),['yes','']);
+for(const invalid of [[1], ['a'.repeat(20001)], ['a','b']])assert.throws(()=>validateAnswers(invalid,1));
+const time=Date.parse('2026-10-15T10:00:00.000Z');
+assert.equal(validateInterviewWindow({status:'invited',expires_at:'2026-10-16T00:00:00.000Z',scheduled_at:'2026-10-15T10:15:00.000Z'},time),true);
+assert.throws(()=>validateInterviewWindow({status:'completed',expires_at:'2026-10-16T00:00:00.000Z'},time));
+assert.throws(()=>validateInterviewWindow({status:'invited',expires_at:'2026-10-14T00:00:00.000Z'},time));
+assert.throws(()=>validateInterviewWindow({status:'invited',expires_at:'2026-10-16T00:00:00.000Z',scheduled_at:'2026-10-15T10:16:00.000Z'},time));
+console.log('Passed: candidate token, answers, schedule and expiry validation');
