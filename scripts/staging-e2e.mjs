@@ -35,6 +35,12 @@ const res=await call('/api/health');
 if(res.status!=='healthy')throw Error('Preview unhealthy');
 const anon=await call('/api/auth');
 if(anon.user!==null)throw Error('Test requires an anonymous start');
+// Protected recruiter queue must reject an anonymous session.
+const anonymousQueue=await fetch(new URL('/api/recruiter/submissions',root),{
+ redirect:'manual',headers:{'x-vercel-protection-bypass':bypass},
+ signal:AbortSignal.timeout(15000)
+});
+if(anonymousQueue.status!==401)throw Error('Anonymous recruiter queue returned '+anonymousQueue.status+' (expected 401)');
 await call('/api/auth',{method:'POST',body:JSON.stringify({action:'register',email,password,organization:'Synthetic QA '+suffix})});
 const auth=await call('/api/auth');
 if(!auth.user?.id)throw Error('Recruiter login session unavailable');
