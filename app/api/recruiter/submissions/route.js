@@ -11,7 +11,7 @@ export async function GET(){
    JOIN invitations v ON v.id=s.invitation_id
    JOIN interviews i ON i.id=v.interview_id
    WHERE i.org_id=$1
-   ORDER BY s.id DESC LIMIT 100
+   ORDER BY s.completed_at DESC, s.id DESC LIMIT 100
   `,[recruiter.org_id]);
   return Response.json({submissions:result.rows},{headers:{'Cache-Control':'no-store'}});
  }catch(error){return fail(error)}
