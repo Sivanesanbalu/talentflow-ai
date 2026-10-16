@@ -1,3 +1,4 @@
+import {invitationLink} from '../../../lib/invitation-origin.mjs';
 import { sql } from '../../../lib/db';
 import { requireMe, fail, token, hash } from '../../../lib/auth';
 
@@ -32,7 +33,7 @@ export async function POST(req) {
     return Response.json({
       email:entry.email,
       stage:entry.stage,
-      invitation_url:new URL('/interview-studio?invite='+secret,req.url).toString(),
+      invitation_url:invitationLink(secret),
       delivery:'manual_email_required'
     }, {status:201});
   } catch (e) {
