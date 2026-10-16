@@ -9,12 +9,14 @@ if (process.env.ALLOW_SYNTHETIC_WRITES!=='yes' || !base || !allowed.test(base)) 
   process.exit(2);
 }
 const root=new URL(base);
+const bypass=process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+if (!bypass) console.error('Preview protection may reject requests without VERCEL_AUTOMATION_BYPASS_SECRET.');
 let cookie='';
 async function call(path,options={}) {
   const url=new URL(path,root);
   if(url.origin!==root.origin)throw Error('Unexpected redirect origin');
   const response=await fetch(url,{...options,redirect:'manual',headers:{
-    'content-type':'application/json',...(cookie?{cookie}:{}),...options.headers
+    'content-type':'application/json',...(bypass?{'x-vercel-protection-bypass':bypass}:{}),...(cookie?{cookie}:{}),...options.headers
   },signal:AbortSignal.timeout(15000)});
   if(response.status>=300 && response.status<400) throw Error('Unexpected redirect: '+response.status);
   const setCookie=response.headers.get('set-cookie');
