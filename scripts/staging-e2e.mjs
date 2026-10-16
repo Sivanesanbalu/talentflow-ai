@@ -58,3 +58,12 @@ const answers=assessment.interview.questions.map((q,i)=>'Synthetic staging-only 
 await call('/api/candidate',{method:'POST',body:JSON.stringify({token,answers,tab_switches:0})});
 console.log('PASS staging: health → recruiter registration → interview → private invitation → assessment start → submission');
 console.log('Note: synthetic records remain in staging database; no real email was sent. Human review requires an authenticated submission lookup.');
+
+// Cross-organization isolation check using an independent synthetic recruiter.
+cookie='';
+await call('/api/auth',{method:'POST',body:JSON.stringify({action:'register',email:'tf-other-'+suffix+'@example.invalid',password:'Synthetic!'+randomUUID()+'#safe',organization:'Separate QA '+suffix})});
+const other=await call('/api/interviews');
+if(!Array.isArray(other.interviews)||other.interviews.some(row=>row.id===interviews.interview.id))throw Error('Cross-tenant interview disclosure');
+const otherInvites=await call('/api/invitations');
+if(!Array.isArray(otherInvites.invitations)||otherInvites.invitations.some(row=>row.email==='candidate-'+suffix+'@example.invalid'))throw Error('Cross-tenant invitation disclosure');
+console.log('PASS staging: tenant separation for interview and invitation lists');
