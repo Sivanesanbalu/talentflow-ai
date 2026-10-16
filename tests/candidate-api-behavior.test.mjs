@@ -57,3 +57,8 @@ test('invalid invitation token is rejected before SQL',async()=>{
  const res=await post({json:async()=>({token:'invalid',answers:['Answer']})});
  assert.equal(res.status,400);assert.equal(calls,0);
 });
+
+test('candidate interview GET uses private no-store for token-gated questions',()=>{
+ const source=readFileSync(new URL('../app/api/candidate/route.js',import.meta.url),'utf8');
+ assert.match(source,/Cache-Control':'private, no-store'/);
+});
