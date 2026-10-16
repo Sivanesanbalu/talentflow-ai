@@ -20,3 +20,7 @@ test('review updates cannot cross tenant boundary',()=>{
  assert.match(review,/recruiter\.org_id/);
  assert.match(review,/status:404/);
 });
+
+test('HR queue sorts by actual completion timestamp, not random UUID',()=>{
+ assert.match(submissions,/ORDER BY s\.completed_at DESC, s\.id DESC/);
+});
