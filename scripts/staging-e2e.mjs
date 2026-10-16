@@ -56,6 +56,14 @@ const start=await call('/api/candidate/start',{method:'POST',body:JSON.stringify
 if(!start.started_at)throw Error('Assessment start was not recorded');
 const answers=assessment.interview.questions.map((q,i)=>'Synthetic staging-only answer '+(i+1)+' with sufficient detail for a functional submission.');
 await call('/api/candidate',{method:'POST',body:JSON.stringify({token,answers,tab_switches:0})});
+const submissionList=await call('/api/recruiter/submissions');
+const mine=submissionList.submissions?.find(s=>s.candidate_email==='candidate-'+suffix+'@example.invalid');
+if(!mine?.id) throw Error('Submitted assessment missing in recruiter review queue');
+const reviewed=await call('/api/review',{method:'POST',body:JSON.stringify({
+ submission_id:mine.id,score:82,status:'reviewed',notes:'Synthetic staging-only QA review'
+})});
+if(reviewed.review?.id!==mine.id) throw Error('HR review update was not confirmed');
+console.log('PASS staging: recruiter submission lookup and HR review');
 console.log('PASS staging: health → recruiter registration → interview → private invitation → assessment start → submission');
 console.log('Note: synthetic records remain in staging database; no real email was sent. Human review requires an authenticated submission lookup.');
 
@@ -64,6 +72,16 @@ cookie='';
 await call('/api/auth',{method:'POST',body:JSON.stringify({action:'register',email:'tf-other-'+suffix+'@example.invalid',password:'Synthetic!'+randomUUID()+'#safe',organization:'Separate QA '+suffix})});
 const other=await call('/api/interviews');
 if(!Array.isArray(other.interviews)||other.interviews.some(row=>row.id===interviews.interview.id))throw Error('Cross-tenant interview disclosure');
+const otherSubmissions=await call('/api/recruiter/submissions');
+if(!Array.isArray(otherSubmissions.submissions) ||
+ otherSubmissions.submissions.some(s=>s.id===mine.id))
+ throw Error('Cross-tenant submission disclosure');
+const denied=await fetch(new URL('/api/review',root),{method:'POST',redirect:'manual',
+ headers:{'content-type':'application/json','x-vercel-protection-bypass':bypass,cookie},
+ body:JSON.stringify({submission_id:mine.id,score:11,status:'rejected',notes:'Synthetic unauthorized review'}),
+ signal:AbortSignal.timeout(15000)});
+if(denied.status!==404)throw Error('Cross-tenant review must return 404, got '+denied.status);
+console.log('PASS staging: cross-tenant submission and review isolation');
 const otherInvites=await call('/api/invitations');
 if(!Array.isArray(otherInvites.invitations)||otherInvites.invitations.some(row=>row.email==='candidate-'+suffix+'@example.invalid'))throw Error('Cross-tenant invitation disclosure');
 console.log('PASS staging: tenant separation for interview and invitation lists');
