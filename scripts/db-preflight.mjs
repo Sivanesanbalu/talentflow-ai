@@ -38,6 +38,10 @@ if (!process.env.DATABASE_URL) {
       "SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname = ANY($1::text[])",
       [['ix_email_deliveries_retries','ix_email_deliveries_provider_message_id']]
     );
+    const submissionConstraint = await client.query(
+      "SELECT 1 FROM pg_constraint WHERE conrelid = to_regclass('public.submissions') AND contype = 'u' AND pg_get_constraintdef(oid) = 'UNIQUE (invitation_id)' LIMIT 1"
+    );
+    if (!submissionConstraint.rowCount) missing.push('constraint.submissions_unique_invitation_id');
     const indexes = new Set(indexResult.rows.map(r => r.indexname));
     const missingIndexes = ['ix_email_deliveries_retries','ix_email_deliveries_provider_message_id'].filter(x => !indexes.has(x));
     missing.push(...missingConstraints.map(x => 'constraint.' + x), ...missingIndexes.map(x => 'index.' + x));
