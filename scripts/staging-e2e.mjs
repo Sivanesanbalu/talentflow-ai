@@ -1,0 +1,55 @@
+// Synthetic staging E2E runner. Requires an authenticated HTTP client, not a Vercel share-link GET fetch.
+// Explicit opt-in only. Refuses production domains and avoids sending external emails.
+import { randomUUID } from 'node:crypto';
+
+const base=process.env.TALENTFLOW_STAGING_URL;
+const allowed=/^https:\/\/talentflow-ai-interviews-[a-z0-9]+-sivas-projects-f0d9f6a6\.vercel\.app\/?$/;
+if (process.env.ALLOW_SYNTHETIC_WRITES!=='yes' || !base || !allowed.test(base)) {
+  console.error('REFUSED: set an exact Vercel preview URL and ALLOW_SYNTHETIC_WRITES=yes.');
+  process.exit(2);
+}
+const root=new URL(base);
+let cookie='';
+async function call(path,options={}) {
+  const url=new URL(path,root);
+  if(url.origin!==root.origin)throw Error('Unexpected redirect origin');
+  const response=await fetch(url,{...options,redirect:'manual',headers:{
+    'content-type':'application/json',...(cookie?{cookie}:{}),...options.headers
+  },signal:AbortSignal.timeout(15000)});
+  if(response.status>=300 && response.status<400) throw Error('Unexpected redirect: '+response.status);
+  const setCookie=response.headers.get('set-cookie');
+  if(setCookie && setCookie.startsWith('tf_session='))cookie=setCookie.split(';',1)[0];
+  const body=await response.json().catch(()=>null);
+  if(!response.ok)throw Error(path+' returned HTTP '+response.status+': '+JSON.stringify(body).slice(0,180));
+  return body;
+}
+const suffix=randomUUID().slice(0,12);
+const email='tf-synthetic-'+suffix+'@example.invalid';
+const password='Synthetic!'+randomUUID()+'#safe';
+const res=await call('/api/health');
+if(res.status!=='healthy')throw Error('Preview unhealthy');
+const anon=await call('/api/auth');
+if(anon.user!==null)throw Error('Test requires an anonymous start');
+await call('/api/auth',{method:'POST',body:JSON.stringify({action:'register',email,password,organization:'Synthetic QA '+suffix})});
+const auth=await call('/api/auth');
+if(!auth.user?.id)throw Error('Recruiter login session unavailable');
+const interviews=await call('/api/interviews',{method:'POST',body:JSON.stringify({
+ role:'Synthetic QA Engineer '+suffix,description:'Synthetic test interview to validate staging-only recruiter workflows.',duration_minutes:30
+})});
+if(!interviews.interview?.id)throw Error('Interview ID missing');
+const candidate=await call('/api/invitations',{method:'POST',body:JSON.stringify({
+ interview_id:interviews.interview.id,email:'candidate-'+suffix+'@example.invalid',
+ name:'Synthetic Candidate',send_email:false
+})});
+if(!candidate.url)throw Error('Private invite URL missing');
+const token=new URL(candidate.url).searchParams.get('invite');
+if(!token)throw Error('Invite token missing');
+// Do not emit token, session cookie or passwords to CI logs.
+const assessment=await call('/api/candidate?token='+encodeURIComponent(token));
+if(!Array.isArray(assessment.interview?.questions))throw Error('Candidate questions missing');
+const start=await call('/api/candidate/start',{method:'POST',body:JSON.stringify({token})});
+if(!start.started_at)throw Error('Assessment start was not recorded');
+const answers=assessment.interview.questions.map((q,i)=>({question:q.text||'',answer:'Synthetic staging-only answer '+(i+1)+' with sufficient detail for a functional submission.'}));
+await call('/api/candidate',{method:'POST',body:JSON.stringify({token,answers,tab_switches:0})});
+console.log('PASS staging: health → recruiter registration → interview → private invitation → assessment start → submission');
+console.log('Note: synthetic records remain in staging database; no real email was sent. Human review requires an authenticated submission lookup.');
