@@ -49,7 +49,7 @@ const assessment=await call('/api/candidate?token='+encodeURIComponent(token));
 if(!Array.isArray(assessment.interview?.questions))throw Error('Candidate questions missing');
 const start=await call('/api/candidate/start',{method:'POST',body:JSON.stringify({token})});
 if(!start.started_at)throw Error('Assessment start was not recorded');
-const answers=assessment.interview.questions.map((q,i)=>({question:q.text||'',answer:'Synthetic staging-only answer '+(i+1)+' with sufficient detail for a functional submission.'}));
+const answers=assessment.interview.questions.map((q,i)=>'Synthetic staging-only answer '+(i+1)+' with sufficient detail for a functional submission.');
 await call('/api/candidate',{method:'POST',body:JSON.stringify({token,answers,tab_switches:0})});
 console.log('PASS staging: health → recruiter registration → interview → private invitation → assessment start → submission');
 console.log('Note: synthetic records remain in staging database; no real email was sent. Human review requires an authenticated submission lookup.');
