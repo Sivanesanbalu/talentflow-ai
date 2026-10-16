@@ -10,7 +10,10 @@ if (process.env.ALLOW_SYNTHETIC_WRITES!=='yes' || !base || !allowed.test(base)) 
 }
 const root=new URL(base);
 const bypass=process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-if (!bypass) console.error('Preview protection may reject requests without VERCEL_AUTOMATION_BYPASS_SECRET.');
+if (!bypass) {
+ console.error('REFUSED: preview test authentication is required.');
+ process.exit(2);
+}
 let cookie='';
 async function call(path,options={}) {
   const url=new URL(path,root);
