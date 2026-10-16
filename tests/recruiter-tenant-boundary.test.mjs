@@ -24,3 +24,9 @@ test('review updates cannot cross tenant boundary',()=>{
 test('HR queue sorts by actual completion timestamp, not random UUID',()=>{
  assert.match(submissions,/ORDER BY s\.completed_at DESC, s\.id DESC/);
 });
+
+test('review endpoint cannot leak submission on unauthorized tenant',()=>{
+ assert.match(review,/WHERE s\.id = \$5/);
+ assert.match(review,/i\.org_id = \$6/);
+ assert.match(review,/Submission not found/);
+});
