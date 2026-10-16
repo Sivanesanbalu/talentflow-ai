@@ -35,7 +35,7 @@ export async function POST(req) {
       stage:entry.stage,
       invitation_url:invitationLink(secret),
       delivery:'manual_email_required'
-    }, {status:201});
+    }, {status:201,headers:{'Cache-Control':'private, no-store'}});
   } catch (e) {
     if (e.code === '23505') return Response.json({error:'Next round already created'}, {status:409});
     return fail(e);
