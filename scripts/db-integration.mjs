@@ -2,7 +2,7 @@
 import {randomUUID} from 'node:crypto';
 
 const APPROVED_BRANCH='br-polished-fog-a114c934';
-const APPROVED_HOST='ep-misty-sea-a1smdlcw.ap-southeast-1.aws.neon.tech';
+const APPROVED_HOSTS=new Set(['ep-misty-sea-a1smdlcw.ap-southeast-1.aws.neon.tech','ep-misty-sea-a1smdlcw-pooler.ap-southeast-1.aws.neon.tech']);
 const branch=process.env.TALENTFLOW_ISOLATED_BRANCH_ID||'';
 const url=process.env.TALENTFLOW_ISOLATED_DB_URL;
 let parsed;
@@ -10,7 +10,7 @@ try { parsed=new URL(url); } catch { /* refused below */ }
 if(process.env.ALLOW_SYNTHETIC_DB_WRITES!=='yes' ||
  branch!==APPROVED_BRANCH ||
  !parsed || !['postgres:','postgresql:'].includes(parsed.protocol) ||
- parsed.hostname!==APPROVED_HOST ||
+ !APPROVED_HOSTS.has(parsed.hostname) ||
  parsed.port && parsed.port!=='5432' ||
  !parsed.username || !parsed.password || !parsed.pathname ||
  parsed.searchParams.get('sslmode')!=='require') {
