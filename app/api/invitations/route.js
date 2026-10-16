@@ -7,4 +7,4 @@ if(b.send_email===true){
   let result;try{result=await deliverEmail({to:email,...invitationEmail({candidate:b.name,role:j.role||"Interview",scheduledAt:when,url:link}),idempotencyKey:'talentflow-invite-'+inviteId})}catch{result={status:'failed',providerId:null}};
   await sql("UPDATE email_deliveries SET status=$1,provider_message_id=$2,sent_at=CASE WHEN $1='sent' THEN now() ELSE NULL END WHERE id=$3",[result.status,result.providerId,claim.rows[0].id]);delivery=result;
 }
-return Response.json({url:link,delivery:delivery.status,providerMessageId:delivery.providerId})}catch(e){return fail(e)}}
+return Response.json({url:link,delivery:delivery.status,providerMessageId:delivery.providerId},{headers:{'Cache-Control':'private, no-store'}})}catch(e){return fail(e)}}
