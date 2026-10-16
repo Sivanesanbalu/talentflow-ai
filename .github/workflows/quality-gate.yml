@@ -1,0 +1,50 @@
+name: TalentFlow Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Regression and source checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Regression tests (no production secrets)
+        run: npm test
+      - name: Source checks
+        run: npm run check:source
+      - name: JavaScript syntax checks
+        run: |
+          find app lib scripts tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+
+  build:
+    name: Next.js production compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Build with synthetic non-production database URL
+        env:
+          DATABASE_URL: postgresql://unused:unused@localhost:5432/unused
+          SESSION_SECRET: ci-build-only-not-a-real-secret-0123456789
+        run: npm run build
