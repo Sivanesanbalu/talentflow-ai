@@ -1,5 +1,4 @@
 // Isolated-branch PostgreSQL integration check; NEVER run against staging/production.
-import pg from 'pg';
 import {randomUUID} from 'node:crypto';
 
 const required=['TALENTFLOW_ISOLATED_DB_URL','TALENTFLOW_ISOLATED_BRANCH_ID'];
@@ -15,6 +14,7 @@ if(process.env.ALLOW_SYNTHETIC_DB_WRITES!=='yes' ||
 }
 // IMPORTANT: branch identifier alone does not prove URL points to the isolated branch.
 // Run with a dedicated short-lived least-privileged connection; never pass production credentials.
+const {default:pg}=await import('pg');
 const client=new pg.Client({connectionString:url,connectionTimeoutMillis:8000});
 let invitationId;
 try {
