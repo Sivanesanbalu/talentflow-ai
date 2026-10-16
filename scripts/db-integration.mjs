@@ -38,8 +38,10 @@ try {
  if(forbidden.rowCount!==0)throw Error('Foreign tenant review permitted');
  const owner=await client.query(`UPDATE submissions s SET review_status='reviewed' FROM invitations v JOIN interviews i ON i.id=v.interview_id WHERE s.invitation_id=v.id AND s.invitation_id=$1 AND i.org_id=$2 RETURNING s.id`,[invitationId,org.id]);
  if(owner.rowCount!==1)throw Error('Owner review not applied');
- console.log('PASS: duplicate prevented; foreign review denied; owning organization review allowed');
- await client.query('ROLLBACK'); // transaction-scoped synthetic data is always discarded
+ await client.query('ROLLBACK'); // discard all synthetic inserts and review updates
+ const leftover=await client.query('SELECT count(*)::integer AS n FROM invitations WHERE id=$1',[invitationId]);
+ if(leftover.rows[0].n!==0)throw Error('Rollback verification failed: synthetic invitation remains');
+ console.log('PASS: duplicate prevented; foreign review denied; owning review allowed; transaction rolled back');
 } catch(e) {
  await client.query('ROLLBACK').catch(()=>{});
  console.error('FAIL:',e.code||e.message);
