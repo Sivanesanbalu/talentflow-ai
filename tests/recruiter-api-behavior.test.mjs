@@ -72,7 +72,7 @@ test('foreign tenant cannot review a submission and query scopes org id',async()
  assert.equal(res.status,404);
  assert.equal((await res.json()).error,'Submission not found');
  assert.deepEqual(call.params,[20,'rejected','test','reviewer-b','submission-org-a','org-b']);
- assert.match(call.query,/i\\.org_id = \\$6/);
+ assert.ok(call.query.includes('i.org_id = $6'));
 });
 
 test('own-tenant review returns updated review row',async()=>{
