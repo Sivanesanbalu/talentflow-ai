@@ -2,8 +2,8 @@
 import pg from 'pg';
 const REQUIRED = {
   invitations: ['id', 'token_hash', 'started_at', 'stage', 'parent_invitation_id'],
-  submissions: ['invitation_id', 'reviewed_at', 'reviewed_by'],
-  email_deliveries: ['id', 'invitation_id', 'kind', 'status', 'recipient', 'attempts', 'next_attempt_at', 'last_error', 'updated_at']
+  submissions: ['invitation_id', 'completed_at', 'review_status', 'reviewed_at', 'reviewed_by'],
+  email_deliveries: ['id', 'invitation_id', 'kind', 'status', 'recipient', 'attempts', 'next_attempt_at', 'last_error', 'updated_at', 'provider_message_id']
 };
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is required to check schema.');
