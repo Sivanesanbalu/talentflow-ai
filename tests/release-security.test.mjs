@@ -19,5 +19,6 @@ test('secrets and build artifacts are excluded',()=>{
 });
 test('deployment has a health endpoint and voice-studio invitation links',()=>{
  assert.match(code('app/api/health/route.js'),/SELECT 1/);
- for (const file of ['app/api/invitations/route.js','app/api/next-round/route.js'])assert.match(code(file),/\/interview-studio\?invite=/);
+ for (const file of ['app/api/invitations/route.js','app/api/next-round/route.js'])assert.match(code(file),/invitationLink\(/);
+ assert.match(code('lib/invitation-origin.mjs'),/\/interview-studio\?invite=/);
 });
