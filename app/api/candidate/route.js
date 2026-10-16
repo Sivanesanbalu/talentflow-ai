@@ -16,7 +16,7 @@ async function readInvite(rawToken) {
 export async function GET(req) {
   try {
     const invite = await readInvite(new URL(req.url).searchParams.get('token'));
-    return Response.json({interview:{role:invite.role,duration:invite.duration_minutes,questions:invite.questions,scheduled_at:invite.scheduled_at,started_at:invite.started_at,server_time:new Date().toISOString()}});
+    return Response.json({interview:{role:invite.role,duration:invite.duration_minutes,questions:invite.questions,scheduled_at:invite.scheduled_at,started_at:invite.started_at,server_time:new Date().toISOString()}},{headers:{'Cache-Control':'private, no-store'}});
   } catch (e) { return fail(e); }
 }
 
