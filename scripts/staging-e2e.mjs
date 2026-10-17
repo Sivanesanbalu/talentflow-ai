@@ -53,7 +53,10 @@ const candidate=await call('/api/invitations',{method:'POST',body:JSON.stringify
  name:'Synthetic Candidate',send_email:false
 })});
 if(!candidate.url)throw Error('Private invite URL missing');
-const token=new URL(candidate.url).searchParams.get('invite');
+const candidateLink=new URL(candidate.url);
+if(candidateLink.origin!==root.origin || candidateLink.pathname!=='/interview-studio')
+ throw Error('Invitation link does not target this exact staging deployment');
+const token=candidateLink.searchParams.get('invite');
 if(!token)throw Error('Invite token missing');
 // Do not emit token, session cookie or passwords to CI logs.
 const assessment=await call('/api/candidate?token='+encodeURIComponent(token));
