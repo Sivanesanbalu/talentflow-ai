@@ -25,7 +25,7 @@ async function call(path,options={}) {
   const setCookie=response.headers.get('set-cookie');
   if(setCookie && setCookie.startsWith('tf_session='))cookie=setCookie.split(';',1)[0];
   const body=await response.json().catch(()=>null);
-  if(!response.ok)throw Error(path+' returned HTTP '+response.status+': '+JSON.stringify(body).slice(0,180));
+  if(!response.ok)throw Error(url.pathname+' returned HTTP '+response.status+': '+JSON.stringify(body).slice(0,180));
   return body;
 }
 const suffix=randomUUID().slice(0,12);
